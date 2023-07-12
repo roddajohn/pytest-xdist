@@ -346,13 +346,15 @@ class DSession:
         if rep.longrepr not in self._failed_collection_errors:
             self._failed_collection_errors[rep.longrepr] = True
             self.config.hook.pytest_collectreport(report=rep)
-            self._handlefailures(rep)
+            self._handlefailures(node, rep)
 
-    def _handlefailures(self, rep):
+    def _handlefailures(self, node, rep):
         if rep.failed:
             self.countfailures += 1
             if self.maxfail and self.countfailures >= self.maxfail:
                 self.shouldstop = f"stopping after {self.countfailures} failures"
+
+            self.sched.handle_failed_test(node, rep)
 
     def triggershutdown(self):
         self.shuttingdown = True

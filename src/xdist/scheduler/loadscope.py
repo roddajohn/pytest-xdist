@@ -248,6 +248,10 @@ class LoadScopeScheduling:
         node.send_runtest_some(nodeids_indexes)
         node.shutdown()
 
+    def handle_failed_test(self, node, rep):
+        self.log("FAILURE")
+        self.log(node, rep)
+
     def _pending_of(self, workload):
         """Return the number of pending tests in a workload."""
         pending = len([1 for scope in workload.values() if not scope])
@@ -291,31 +295,3 @@ class LoadScopeScheduling:
         # Assign initial workload
         for node in self.nodes:
             self._assign_work_unit(node)
-
-    def _check_nodes_have_same_collection(self):
-        """Return True if all nodes have collected the same items.
-
-        If collections differ, this method returns False while logging
-        the collection differences and posting collection errors to
-        pytest_collectreport hook.
-        """
-        node_collection_items = list(self.registered_collections.items())
-        first_node, col = node_collection_items[0]
-        same_collection = True
-
-        for node, collection in node_collection_items[1:]:
-            msg = report_collection_diff(
-                col, collection, first_node.gateway.id, node.gateway.id
-            )
-            if not msg:
-                continue
-
-            same_collection = False
-
-            if self.config is None:
-                continue
-
-            rep = CollectReport(node.gateway.id, "failed", longrepr=msg, result=[])
-            self.config.hook.pytest_collectreport(report=rep)
-
-        return same_collection
