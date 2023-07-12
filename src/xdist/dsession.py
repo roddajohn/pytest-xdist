@@ -280,7 +280,7 @@ class DSession:
         """Emitted when a node calls the pytest_runtest_logreport hook."""
         rep.node = node
         self.config.hook.pytest_runtest_logreport(report=rep)
-        self._handlefailures(rep)
+        self._handlefailures(node, rep)
 
     def worker_runtest_protocol_complete(self, node, item_index, duration):
         """
