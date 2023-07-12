@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import csv
 
@@ -93,6 +93,9 @@ class LoadScopeScheduling:
         self.assigned_work = OrderedDict()
         self.registered_collections = OrderedDict()
         self.durations = OrderedDict()
+
+        self.retries = defaultdict(int)
+        self.retry_queue = OrderedDict()
 
         if log is None:
             self.log = Producer("loadscopesched")
@@ -244,12 +247,17 @@ class LoadScopeScheduling:
         self.log(f"Running {nodeids_indexes}")
 
         node.send_runtest_some(nodeids_indexes)
-        node.shutdown()
 
     def handle_failed_test(self, node, rep):
-        print ("FAILURE")
-        print (node)
-        print (rep)
+        if self.retries[node] >= 3:
+            return True
+
+        self.retries[node] += 1
+
+        retry = self.retry_queue.setdefault(node, default=[])
+        retry.append(rep.nodeid)
+
+        return False
 
     def _pending_of(self, workload):
         """Return the number of pending tests in a workload."""
@@ -262,7 +270,12 @@ class LoadScopeScheduling:
         If there are any globally pending work units left then this will check
         if the given node should be given any more tests.
         """
-        if self._pending_of(self.assigned_work[node]) == 0:
+        while self.retry_queue[node]:
+            nodeid = self.retry_queue[node].pop()
+            nodeid_index = self.registered_collections[node].index(nodeid)
+            node.send_runtest_some([nodeid_index])
+
+        if self._pending_of(self.assigned_work[node]) <= 2:
             self.log("Shutting down node due to no more work")
             node.shutdown()
 

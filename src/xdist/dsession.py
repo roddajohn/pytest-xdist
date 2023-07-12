@@ -350,11 +350,12 @@ class DSession:
 
     def _handlefailures(self, node, rep):
         if rep.failed:
-            self.countfailures += 1
-            if self.maxfail and self.countfailures >= self.maxfail:
-                self.shouldstop = f"stopping after {self.countfailures} failures"
+            should_count = self.sched.handle_failed_test(node, rep)
 
-            self.sched.handle_failed_test(node, rep)
+            if should_count:
+                self.countfailures += 1
+                if self.maxfail and self.countfailures >= self.maxfail:
+                    self.shouldstop = f"stopping after {self.countfailures} failures"
 
     def triggershutdown(self):
         self.shuttingdown = True
