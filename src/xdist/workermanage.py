@@ -71,6 +71,7 @@ class NodeManager:
         complete_tests = glob.glob("tests/**/*.py", recursive=True)
         complete_tests = [c for c in complete_tests if ".pyc" not in c]
         complete_tests = [c for c in complete_tests if "__pycache__" not in c]
+        complete_tests = [c for c in complete_tests if "__init__.py" not in c]
         complete_tests = [c for c in complete_tests if "conftest.py" not in c]
         complete_tests = [c for c in complete_tests if "tests/incremental" not in c]
         complete_tests = [c for c in complete_tests if "factory.py" not in c]
@@ -104,7 +105,7 @@ class NodeManager:
 
         for i in range(len(paths)):
             bucket = paths[i]
-            paths[i] = [test for test in bucket if test in complete_tests]
+            paths[i] = [test for test in bucket if test in complete_tests and or '__init__.py' in test]
 
         # paths[0] += new_tests
 
