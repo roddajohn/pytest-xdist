@@ -65,8 +65,8 @@ class NodeManager:
         #     ["tests/test_workflows"],
         #     ["tests/test_bill_pay/test_autofilling.py"],
         # ]
-        paths = json.loads(open(f"bins.json").read())
-        #paths = json.loads(open(f"{os.environ['TEST_DIR']}/bins.json").read())
+        #paths = json.loads(open(f"bins.json").read())
+        paths = json.loads(open(f"{os.environ['TEST_DIR']}/bins.json").read())
 
         complete_tests = glob.glob("tests/**/*.py", recursive=True)
         complete_tests = [c for c in complete_tests if ".pyc" not in c]
@@ -86,7 +86,8 @@ class NodeManager:
             if not found:
                 new_tests.append(test)
 
-            self.log("Adding", new_tests)
+        paths[0].extend(new_tests)
+        self.log("Adding", new_tests)
 
         for i in range(len(paths)):
             bucket = paths[i]
