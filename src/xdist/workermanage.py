@@ -86,7 +86,20 @@ class NodeManager:
             if not found:
                 new_tests.append(test)
 
-        paths[0].extend(new_tests)
+        while new_tests:
+            new_test = new_tests.pop()
+
+            current_min_index = -1
+            current_min_count = -1
+
+            for bucket in paths:
+                count = len(bucket)
+                if current_min_count == -1 or count < current_min_count:
+                    current_min_index = paths.index(bucket)
+                    current_min_count = count
+
+            paths[current_min_index].append(new_test)
+
         self.log("Adding", new_tests)
 
         for i in range(len(paths)):
