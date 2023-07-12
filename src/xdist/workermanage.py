@@ -92,10 +92,10 @@ class NodeManager:
             current_min_index = -1
             current_min_count = -1
 
-            for bucket in paths:
+            for i, bucket in enumerate(paths):
                 count = len(bucket)
                 if current_min_count == -1 or count < current_min_count:
-                    current_min_index = paths.index(bucket)
+                    current_min_index = i
                     current_min_count = count
 
             paths[current_min_index].append(new_test)
