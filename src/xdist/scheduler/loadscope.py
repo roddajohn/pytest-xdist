@@ -270,7 +270,7 @@ class LoadScopeScheduling:
         If there are any globally pending work units left then this will check
         if the given node should be given any more tests.
         """
-        while self.retry_queue[node]:
+        while self.retry_queue.get(node, []):
             nodeid = self.retry_queue[node].pop()
             nodeid_index = self.registered_collections[node].index(nodeid)
             node.send_runtest_some([nodeid_index])

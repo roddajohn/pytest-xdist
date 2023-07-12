@@ -279,8 +279,10 @@ class DSession:
     def worker_testreport(self, node, rep):
         """Emitted when a node calls the pytest_runtest_logreport hook."""
         rep.node = node
-        self.config.hook.pytest_runtest_logreport(report=rep)
-        self._handlefailures(node, rep)
+        should_count = self._handlefailures(node, rep)
+        if should_count:
+            self.config.hook.pytest_runtest_logreport(report=rep)
+
 
     def worker_runtest_protocol_complete(self, node, item_index, duration):
         """
@@ -344,9 +346,11 @@ class DSession:
         # Check we haven't already seen this report (from
         # another worker).
         if rep.longrepr not in self._failed_collection_errors:
-            self._failed_collection_errors[rep.longrepr] = True
-            self.config.hook.pytest_collectreport(report=rep)
-            self._handlefailures(node, rep)
+            should_count = self._handlefailures(node, rep)
+
+            if should_count:
+                self._failed_collection_errors[rep.longrepr] = True
+                self.config.hook.pytest_collectreport(report=rep)
 
     def _handlefailures(self, node, rep):
         if rep.failed:
@@ -356,6 +360,9 @@ class DSession:
                 self.countfailures += 1
                 if self.maxfail and self.countfailures >= self.maxfail:
                     self.shouldstop = f"stopping after {self.countfailures} failures"
+
+            return should_count
+        return True
 
     def triggershutdown(self):
         self.shuttingdown = True
