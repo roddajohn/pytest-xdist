@@ -135,13 +135,11 @@ class LoadScopeScheduling:
             if not all([x for x in self.assigned_work[node].values()]):
                 return False
 
-        print ('writing durations')
         with open('durations.csv', 'w') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['nodeid', 'duration'])
             for nodeid, duration in self.durations.items():
                 writer.writerow([nodeid, duration])
-        print ('written durations')
 
         return True
 
@@ -249,8 +247,9 @@ class LoadScopeScheduling:
         node.shutdown()
 
     def handle_failed_test(self, node, rep):
-        self.log("FAILURE")
-        self.log(node, rep)
+        print ("FAILURE")
+        print (node)
+        print (rep)
 
     def _pending_of(self, workload):
         """Return the number of pending tests in a workload."""
