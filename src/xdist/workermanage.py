@@ -105,7 +105,7 @@ class NodeManager:
 
         for i in range(len(paths)):
             bucket = paths[i]
-            paths[i] = [test for test in bucket if test in complete_tests and or '__init__.py' in test]
+            paths[i] = [test for test in bucket if test in complete_tests or '__init__.py' in test]
 
         # paths[0] += new_tests
 
