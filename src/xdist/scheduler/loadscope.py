@@ -207,6 +207,10 @@ class LoadScopeScheduling:
 
         self.registered_collections[node] = list(collection)
 
+        total_number = sum([len(i) for i in self.registered_collections.values()])
+
+        return total_number
+
     def mark_test_complete(self, node, item_index, duration=0):
         """Mark test item as completed by node.
 

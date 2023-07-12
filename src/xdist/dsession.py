@@ -252,8 +252,8 @@ class DSession:
         self.config.hook.pytest_xdist_node_collection_finished(node=node, ids=ids)
         # tell session which items were effectively collected otherwise
         # the controller node will finish the session with EXIT_NOTESTSCOLLECTED
-        self._session.testscollected = len(ids)
-        self.sched.add_node_collection(node, ids)
+        total = self.sched.add_node_collection(node, ids)
+        self._session.testscollected = total
         if self.terminal:
             self.trdist.setstatus(
                 node.gateway.spec, WorkerStatus.CollectionDone, tests_collected=len(ids)
