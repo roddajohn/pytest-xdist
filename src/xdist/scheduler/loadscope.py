@@ -252,7 +252,7 @@ class LoadScopeScheduling:
         if self.retries[rep.nodeid] >= 5:
             return True
 
-        self.retries[rep.node] += 1
+        self.retries[rep.nodeid] += 1
 
         retry = self.retry_queue.setdefault(node, default=[])
         retry.append(rep.nodeid)
