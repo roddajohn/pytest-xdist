@@ -86,6 +86,8 @@ class NodeManager:
             if not found:
                 new_tests.append(test)
 
+            self.log("Adding", new_tests)
+
         for i in range(len(paths)):
             bucket = paths[i]
             paths[i] = [test for test in bucket if test in complete_tests]
