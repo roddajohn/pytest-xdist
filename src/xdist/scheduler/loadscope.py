@@ -94,7 +94,7 @@ class LoadScopeScheduling:
         self.registered_collections = OrderedDict()
         self.durations = OrderedDict()
 
-        self.retries = defaultdict(int)
+        self.retries = {}
         self.retry_queue = OrderedDict()
 
         if log is None:
@@ -249,7 +249,10 @@ class LoadScopeScheduling:
         node.send_runtest_some(nodeids_indexes)
 
     def handle_failed_test(self, node, rep):
-        print (f"Handling a retry, nodeid: {rep.nodeid}, retry count: {self.retries[rep.nodeid]}")
+        if rep.nodeid not in self.retries:
+            self.retries[rep.nodeid] = 0
+
+        print (f"Handling a failed test, nodeid: {rep.nodeid}, retry count: {self.retries[rep.nodeid]}")
 
         if self.retries[rep.nodeid] >= 5:
             return True
