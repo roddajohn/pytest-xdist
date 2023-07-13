@@ -288,7 +288,7 @@ class LoadScopeScheduling:
             ])
             print (f'Enqueing 5 retries for {nodeid}')
 
-        if self._pending_of(self.assigned_work[node]) <= 2:
+        if self._pending_of(self.assigned_work[node]) <= 1:
             self.log("Shutting down node due to no more work")
             node.shutdown()
 
