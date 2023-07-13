@@ -71,15 +71,15 @@ class WorkerInteractor:
         config.pluginmanager.register(self)
 
     def _make_queue(self):
-        return self.channel.gateway.execmodel.queue.Queue()
+        return self.channel.gateway.execmodel.queue.PriorityQueue()
 
     def _get_next_item_index(self):
         """Gets the next item from test queue. Handles the case when the queue
         is replaced concurrently in another thread.
         """
-        result = self.torun.get()
+        _, result = self.torun.get()
         while result is self.QUEUE_REPLACED_MARK:
-            result = self.torun.get()
+            _, result = self.torun.get()
         return result
 
     def sendevent(self, name, **kwargs):
@@ -120,12 +120,12 @@ class WorkerInteractor:
         # self.log("received command", name, kwargs)
         if name == "runtests":
             for i in kwargs["indices"]:
-                self.torun.put(i)
+                self.torun.put((0, i))
         elif name == "runtests_all":
             for i in range(len(self.session.items)):
-                self.torun.put(i)
+                self.torun.put((0, i))
         elif name == "shutdown":
-            self.torun.put(self.SHUTDOWN_MARK)
+            self.torun.put((100, self.SHUTDOWN_MARK))
         elif name == "steal":
             self.steal(kwargs["indices"])
 
@@ -143,10 +143,10 @@ class WorkerInteractor:
             if i in indices:
                 stolen.append(i)
             else:
-                self.torun.put(i)
+                self.torun.put((0, i))
 
         self.sendevent("unscheduled", indices=stolen)
-        old_queue.put(self.QUEUE_REPLACED_MARK)
+        old_queue.put((50, self.QUEUE_REPLACED_MARK))
 
     @pytest.hookimpl
     def pytest_runtestloop(self, session):
