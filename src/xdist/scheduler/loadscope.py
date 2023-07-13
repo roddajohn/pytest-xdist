@@ -262,8 +262,7 @@ class LoadScopeScheduling:
     def _pending_of(self, workload):
         """Return the number of pending tests in a workload."""
         pending = len([1 for scope in workload.values() if not scope])
-        pending_retries = sum([len(i) for i in self.retry_queue.values()])
-        return pending + pending_retries
+        return pending
 
     def _reschedule(self, node):
         """Maybe schedule new items on the node.
@@ -274,10 +273,10 @@ class LoadScopeScheduling:
         while self.retry_queue.get(node, []):
             nodeid = self.retry_queue[node].pop()
             nodeid_index = self.registered_collections[node].index(nodeid)
-            node.send_runtest_some([nodeid_index])
-            print (f'Enqueing retry for {nodeid}, attempt {self.retries[nodeid]}')
+            node.send_runtest_some([nodeid_index] * 5)
+            print (f'Enqueing retries for {nodeid}, attempt {self.retries[nodeid]}')
 
-        if self._pending_of(self.assigned_work[node]) == 0:
+        if self._pending_of(self.assigned_work[node]) <= 2:
             self.log("Shutting down node due to no more work")
             node.shutdown()
 
