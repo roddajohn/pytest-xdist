@@ -252,6 +252,9 @@ class LoadScopeScheduling:
         if self.retries[rep.nodeid] >= 5:
             return True
 
+        if self.retries[rep.nodeid] > 0:
+            return False
+
         self.retries[rep.nodeid] += 1
 
         retry = self.retry_queue.setdefault(node, default=[])
@@ -273,8 +276,14 @@ class LoadScopeScheduling:
         while self.retry_queue.get(node, []):
             nodeid = self.retry_queue[node].pop()
             nodeid_index = self.registered_collections[node].index(nodeid)
-            node.send_runtest_some([nodeid_index] * 5)
-            print (f'Enqueing retries for {nodeid}, attempt {self.retries[nodeid]}')
+            node.send_runtest_some([
+                nodeid_index,
+                nodeid_index,
+                nodeid_index,
+                nodeid_index,
+                nodeid_index
+            ])
+            print (f'Enqueing 5 retries for {nodeid}')
 
         if self._pending_of(self.assigned_work[node]) <= 2:
             self.log("Shutting down node due to no more work")
