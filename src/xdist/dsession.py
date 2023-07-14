@@ -55,6 +55,7 @@ class DSession:
         # summary message to print at the end of the session
         self._summary_report = None
         self.terminal = config.pluginmanager.getplugin("terminalreporter")
+        self.failures = {}
         if self.terminal:
             self.trdist = TerminalDistReporter(config)
             config.pluginmanager.register(self.trdist, "terminaldistreporter")
@@ -280,8 +281,12 @@ class DSession:
         """Emitted when a node calls the pytest_runtest_logreport hook."""
         rep.node = node
         should_count = self._handlefailures(node, rep)
+
+        if rep.nodeid not in self.failures:
+            self.failures[rep.nodeid] = rep
+
         if should_count:
-            self.config.hook.pytest_runtest_logreport(report=rep)
+            self.config.hook.pytest_runtest_logreport(report=self.failures[rep.nodeid])
 
 
     def worker_runtest_protocol_complete(self, node, item_index, duration):
@@ -348,9 +353,12 @@ class DSession:
         if rep.longrepr not in self._failed_collection_errors:
             should_count = self._handlefailures(node, rep)
 
+            if rep.nodeid not in self.failures:
+                self.failures[rep.nodeid] = rep
+
             if should_count:
-                self._failed_collection_errors[rep.longrepr] = True
-                self.config.hook.pytest_collectreport(report=rep)
+                self._failed_collection_errors[self.failures[rep.nodeid].longrepr] = True
+                self.config.hook.pytest_collectreport(report=self.failures[rep.nodeid])
 
     def _handlefailures(self, node, rep):
         if rep.failed:
