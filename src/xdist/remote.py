@@ -68,6 +68,7 @@ class WorkerInteractor:
         self.channel = channel
         self.torun = self._make_queue()
         self.nextitem_index = None
+        self.already_run_tests = set()
         config.pluginmanager.register(self)
 
     def _make_queue(self):
@@ -173,6 +174,10 @@ class WorkerInteractor:
         else:
             nextitem = items[self.nextitem_index]
 
+        if self.item_index in self.already_run_tests:
+            item._request = False
+            item.funcargs = None
+
         worker_title("[pytest-xdist running] %s" % item.nodeid)
 
         self.log("running", self.item_index)
@@ -181,6 +186,8 @@ class WorkerInteractor:
             item=item, nextitem=nextitem if nextitem else items[0]
         )
         duration = time.time() - start
+
+        self.already_run_tests.add(self.item_index)
 
         worker_title("[pytest-xdist idle]")
 
