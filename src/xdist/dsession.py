@@ -280,13 +280,17 @@ class DSession:
     def worker_testreport(self, node, rep):
         """Emitted when a node calls the pytest_runtest_logreport hook."""
         rep.node = node
-        should_count = self._handlefailures(node, rep)
 
-        if rep.nodeid not in self.failures:
-            self.failures[rep.nodeid] = rep
+        if rep.failed:
+            should_count = self._handlefailures(node, rep)
 
-        if should_count:
-            self.config.hook.pytest_runtest_logreport(report=self.failures[rep.nodeid])
+            if rep.nodeid not in self.failures:
+                self.failures[rep.nodeid] = rep
+
+            if should_count:
+                self.config.hook.pytest_runtest_logreport(report=self.failures[rep.nodeid])
+        else:
+            self.config.hook.pytest_runtest_logreport(report=rep)
 
 
     def worker_runtest_protocol_complete(self, node, item_index, duration):
