@@ -278,6 +278,9 @@ class LoadScopeScheduling:
         """
         while self.retry_queue.get(node, []):
             nodeid = self.retry_queue[node].pop()
+            if nodeid not in self.registered_collections[node]:
+                continue
+
             nodeid_index = self.registered_collections[node].index(nodeid)
             node.send_runtest_some([
                 nodeid_index,
