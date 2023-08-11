@@ -63,7 +63,7 @@ class NodeManager:
         # paths = [
         #     ["tests/test_accounting/test_workflows"],
         #     ["tests/test_workflows"],
-        #     ["tests/test_bill_pay/test_autofilling.py"],
+        #     ["tests/"],
         # ]
         #paths = json.loads(open(f"bins.json").read())
         paths = json.loads(open(f"{os.environ['TEST_DIR']}/bins.json").read())
