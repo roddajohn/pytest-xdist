@@ -287,7 +287,7 @@ class DSession:
             if rep.nodeid not in self.failures:
                 self.failures[rep.nodeid] = rep
 
-            if should_count:
+            if should_count or True: # Remove or True in order to re-enable rerun logic
                 self.config.hook.pytest_runtest_logreport(report=self.failures[rep.nodeid])
         else:
             self.config.hook.pytest_runtest_logreport(report=rep)
