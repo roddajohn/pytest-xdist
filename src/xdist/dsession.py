@@ -355,14 +355,13 @@ class DSession:
         # Check we haven't already seen this report (from
         # another worker).
         if rep.longrepr not in self._failed_collection_errors:
-            should_count = self._handlefailures(node, rep)
+            self._handlefailures(node, rep)
 
             if rep.nodeid not in self.failures:
                 self.failures[rep.nodeid] = rep
 
-            if should_count or True:
-                self._failed_collection_errors[self.failures[rep.nodeid].longrepr] = True
-                self.config.hook.pytest_collectreport(report=self.failures[rep.nodeid])
+            self._failed_collection_errors[self.failures[rep.nodeid].longrepr] = True
+            self.config.hook.pytest_collectreport(report=self.failures[rep.nodeid])
 
     def _handlefailures(self, node, rep):
         if rep.failed:
