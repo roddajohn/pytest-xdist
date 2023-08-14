@@ -74,8 +74,6 @@ class NodeManager:
         complete_tests = [c for c in complete_tests if "__init__.py" not in c]
         complete_tests = [c for c in complete_tests if "conftest.py" not in c]
         complete_tests = [c for c in complete_tests if "tests/incremental" not in c]
-        complete_tests = [c for c in complete_tests if "factory.py" not in c]
-        complete_tests = [c for c in complete_tests if "factories.py" not in c]
 
         new_tests = []
         for test in complete_tests:
