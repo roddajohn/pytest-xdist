@@ -360,7 +360,7 @@ class DSession:
             if rep.nodeid not in self.failures:
                 self.failures[rep.nodeid] = rep
 
-            if should_count:
+            if should_count or True:
                 self._failed_collection_errors[self.failures[rep.nodeid].longrepr] = True
                 self.config.hook.pytest_collectreport(report=self.failures[rep.nodeid])
 
