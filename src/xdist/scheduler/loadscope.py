@@ -1,4 +1,5 @@
 from collections import OrderedDict, defaultdict
+import re
 
 import csv
 
@@ -86,6 +87,8 @@ class LoadScopeScheduling:
     :config: Config object, used for handling hooks.
     """
 
+    RETRIES_MODULE_AND_TEST_REGEX = re.compile('([^:]+)::(.+)')
+
     def __init__(self, config, log=None):
         self.numnodes = len(parse_spec_config(config))
         self.collection = None
@@ -141,8 +144,21 @@ class LoadScopeScheduling:
         with open('durations.csv', 'w') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['nodeid', 'duration'])
+
             for nodeid, duration in self.durations.items():
                 writer.writerow([nodeid, duration])
+
+        with open('flakes.csv', 'w') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['filepath', 'test', 'num_retries'])
+            for entry, num_retries in self.retries.items():
+                try:
+                    match = LoadScopeScheduling.RETRIES_MODULE_AND_TEST_REGEX.match(entry)
+                    filepath = match.groups()[0]
+                    test_name = match.groups()[1]
+                    writer.writerow([filepath, test_name, num_retries])
+                except IndexError:
+                    print(f"FAILURE ON FLAKES REGEX {entry}")
 
         return True
 
