@@ -1,12 +1,21 @@
-from collections import OrderedDict, defaultdict
 import re
 
 import csv
+from collections import OrderedDict, defaultdict
+from dataclasses import dataclass
 
 from _pytest.runner import CollectReport
+from _pytest.reports import TestReport
 from xdist.remote import Producer
 from xdist.report import report_collection_diff
 from xdist.workermanage import parse_spec_config
+
+
+
+@dataclass
+class RetryInfo:
+    retry_count: int
+    original_test_report: TestReport
 
 
 class LoadScopeScheduling:
@@ -97,7 +106,7 @@ class LoadScopeScheduling:
         self.registered_collections = OrderedDict()
         self.durations = OrderedDict()
 
-        self.retries = {}
+        self.retries: dict[str, RetryInfo] = {}
         self.retry_queue = OrderedDict()
 
         if log is None:
@@ -161,6 +170,13 @@ class LoadScopeScheduling:
                         writer.writerow([filepath, test_name, num_retries])
                     except IndexError:
                         print(f"FAILURE ON FLAKES REGEX {entry}")
+
+        if self.retries:
+            print("======== Flaky Tests Output ========")
+            for nodeid, retry_info in self.retries.items():
+                print(f"---- {nodeid} ----")
+                print(retry_info.original_test_report.longreprtext)
+                print()
 
         return True
 
@@ -268,18 +284,22 @@ class LoadScopeScheduling:
 
     def handle_failed_test(self, node, rep):
         if rep.nodeid not in self.retries:
-            self.retries[rep.nodeid] = 0
+            self.retries[rep.nodeid] = RetryInfo(
+                retry_count=0,
+                original_test_report=rep,
+            )
+        retry_info = self.retries[rep.nodeid]
 
-        print (f"Handling a failed test, nodeid: {rep.nodeid}, retry count: {self.retries[rep.nodeid]}")
+        print (f"Handling a failed test, nodeid: {rep.nodeid}, retry count: {retry_info.retry_count}")
 
-        if self.retries[rep.nodeid] >= 5:
+        if retry_info.retry_count >= 5:
             return True
 
-        if self.retries[rep.nodeid] == 0:
+        if retry_info.retry_count == 0:
             retry = self.retry_queue.setdefault(node, default=[])
             retry.append(rep.nodeid)
 
-        self.retries[rep.nodeid] = self.retries[rep.nodeid] + 1
+        retry_info.retry_count += 1
 
         return False
 
