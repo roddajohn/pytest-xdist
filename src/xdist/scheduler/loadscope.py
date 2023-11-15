@@ -160,14 +160,14 @@ class LoadScopeScheduling:
         with open('flakes.csv', 'w') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['filepath', 'test', 'num_retries'])
-            for entry, num_retries in self.retries.items():
+            for entry, retry_info in self.retries.items():
                     match = LoadScopeScheduling.RETRIES_MODULE_AND_TEST_REGEX.match(entry)
                     if match is None:
                         continue
                     try:
                         filepath = match.groups()[0]
                         test_name = match.groups()[1]
-                        writer.writerow([filepath, test_name, num_retries])
+                        writer.writerow([filepath, test_name, retry_info.retry_count])
                     except IndexError:
                         print(f"FAILURE ON FLAKES REGEX {entry}")
 
