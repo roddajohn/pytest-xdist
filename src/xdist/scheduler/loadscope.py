@@ -1,21 +1,10 @@
 import re
 
 import csv
-from collections import OrderedDict, defaultdict
-from dataclasses import dataclass
+from collections import OrderedDict
 
-from _pytest.runner import CollectReport
-from _pytest.reports import TestReport
 from xdist.remote import Producer
-from xdist.report import report_collection_diff
 from xdist.workermanage import parse_spec_config
-
-
-
-@dataclass
-class RetryInfo:
-    retry_count: int
-    original_test_report: TestReport
 
 
 class LoadScopeScheduling:
@@ -96,7 +85,7 @@ class LoadScopeScheduling:
     :config: Config object, used for handling hooks.
     """
 
-    RETRIES_MODULE_AND_TEST_REGEX = re.compile('([^:]+)::(.+)')
+    RETRIES_MODULE_AND_TEST_REGEX = re.compile('(?P<filepath>[^:]+)::(?P<test_name>.+)')
 
     def __init__(self, config, log=None):
         self.numnodes = len(parse_spec_config(config))
@@ -106,8 +95,7 @@ class LoadScopeScheduling:
         self.registered_collections = OrderedDict()
         self.durations = OrderedDict()
 
-        self.retries: dict[str, RetryInfo] = {}
-        self.retry_queue = OrderedDict()
+        self.failed_tests: set[str] = set()
 
         if log is None:
             self.log = Producer("loadscopesched")
@@ -160,23 +148,13 @@ class LoadScopeScheduling:
         with open('flakes.csv', 'w') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['filepath', 'test', 'num_retries'])
-            for entry, retry_info in self.retries.items():
-                    match = LoadScopeScheduling.RETRIES_MODULE_AND_TEST_REGEX.match(entry)
-                    if match is None:
-                        continue
-                    try:
-                        filepath = match.groups()[0]
-                        test_name = match.groups()[1]
-                        writer.writerow([filepath, test_name, retry_info.retry_count])
-                    except IndexError:
-                        print(f"FAILURE ON FLAKES REGEX {entry}")
-
-        if self.retries:
-            print("======== Flaky Tests Output ========")
-            for nodeid, retry_info in self.retries.items():
-                print(f"---- {nodeid} ----")
-                print(retry_info.original_test_report.longreprtext)
-                print()
+            for failed_test in sorted(self.failed_tests):
+                match = LoadScopeScheduling.RETRIES_MODULE_AND_TEST_REGEX.match(failed_test)
+                if match is None:
+                    continue
+                filepath = match["filepath"]
+                test_name = match["test_name"]
+                writer.writerow([filepath, test_name, 1])
 
         return True
 
@@ -283,25 +261,8 @@ class LoadScopeScheduling:
         node.send_runtest_some(nodeids_indexes)
 
     def handle_failed_test(self, node, rep):
-        if rep.nodeid not in self.retries:
-            self.retries[rep.nodeid] = RetryInfo(
-                retry_count=0,
-                original_test_report=rep,
-            )
-        retry_info = self.retries[rep.nodeid]
-
-        print (f"Handling a failed test, nodeid: {rep.nodeid}, retry count: {retry_info.retry_count}")
-
-        if retry_info.retry_count >= 5:
-            return True
-
-        if retry_info.retry_count == 0:
-            retry = self.retry_queue.setdefault(node, default=[])
-            retry.append(rep.nodeid)
-
-        retry_info.retry_count += 1
-
-        return False
+        self.failed_tests.add(rep.nodeid)
+        return True
 
     def _pending_of(self, workload):
         """Return the number of pending tests in a workload."""
@@ -314,21 +275,6 @@ class LoadScopeScheduling:
         If there are any globally pending work units left then this will check
         if the given node should be given any more tests.
         """
-        while self.retry_queue.get(node, []):
-            nodeid = self.retry_queue[node].pop()
-            if nodeid not in self.registered_collections[node]:
-                continue
-
-            nodeid_index = self.registered_collections[node].index(nodeid)
-            node.send_runtest_some([
-                nodeid_index,
-                nodeid_index,
-                nodeid_index,
-                nodeid_index,
-                nodeid_index
-            ])
-            print (f'Enqueing 5 retries for {nodeid}')
-
         if self._pending_of(self.assigned_work[node]) <= 1:
             self.log("Shutting down node due to no more work")
             node.shutdown()
